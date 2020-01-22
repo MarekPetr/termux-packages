@@ -19,6 +19,15 @@ jobs:
         git clone --depth=1 https://github.com/termux/termux-root-packages /tmp/repos/root
         git clone --depth=1 https://github.com/termux/unstable-packages /tmp/repos/unstable
         git clone --depth=1 https://github.com/termux/x11-packages /tmp/repos/x11
-    - name: Generate metadata
+    - name: Process all Termux packages
       run: |
-        ./scripts/repology/generate-repology-metadata.sh ./packages/* /tmp/repos/*/packages/*
+        mkdir -p generated
+        ./scripts/repology/generate-repology-metadata.sh ./packages/* /tmp/repos/*/packages/* > ./generated/packages.json
+    - name: Upload metadata to bintray.com
+      run: |
+        echo "Not implemented"
+    - name: Store packages.json as artifact
+      uses: actions@upload-artifact@v1
+      with:
+        name: repology-metadata
+        path: ./generated/packages.json
