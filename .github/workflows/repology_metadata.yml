@@ -24,8 +24,27 @@ jobs:
         mkdir -p generated
         ./scripts/repology/generate-repology-metadata.sh ./packages/* /tmp/repos/*/packages/* > ./generated/packages.json
     - name: Upload metadata to bintray.com
+      env:
+        BINTRAY_USERNAME: ${{ secrets.BINTRAY_USERNAME }}
+        BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+        BINTRAY_REPO_NAME: "metadata"
+        BINTRAY_PACKAGE_NAME: "repology"
       run: |
-        echo "Not implemented"
+        get_status_code() { echo "$1" | cut -d'|' -f2; }
+        response=$(curl --fail --silent --user "${BINTRAY_USERNAME}:${BINTRAY_API_KEY}" --request DELETE --write-out "|%{http_code}" \
+          "https://api.bintray.com/content/${BINTRAY_SUBJECT}/${BINTRAY_REPO_NAME}/${BINTRAY_PACKAGE_NAME}/packages.json")
+        if [[ $(get_status_code "$response") != "200" ]] && [[ $(get_status_code "$response") != "404" ]]; then
+          echo "Old medatata deletion failed !"
+          exit 1
+        fi
+        response=$(curl --silent --user "${BINTRAY_USERNAME}:${BINTRAY_API_KEY}" --request PUT \
+          --header "X-Bintray-Package: ${BINTRAY_PACKAGE_NAME}" --header "X-Bintray-Version: current" \
+          --header "X-Bintray-Publish: 1" --upload-file ./generated/packages.json --write-out "|%{http_code}" \
+          "https://api.bintray.com/content/${BINTRAY_SUBJECT}/${BINTRAY_REPO_NAME}/${BINTRAY_PACKAGE_NAME}/packages.json")
+        if [[ $(get_status_code "$response") != "201" ]] && [[ $(get_status_code "$response") != "409" ]]; then
+          echo "New metadata uploading failed !"
+          exit 1
+        fi
     - name: Store packages.json as artifact
       uses: actions/upload-artifact@v1
       with:
