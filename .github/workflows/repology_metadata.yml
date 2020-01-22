@@ -27,7 +27,7 @@ jobs:
       run: |
         echo "Not implemented"
     - name: Store packages.json as artifact
-      uses: actions@upload-artifact@v1
+      uses: actions/upload-artifact@v1
       with:
         name: repology-metadata
         path: ./generated/packages.json
